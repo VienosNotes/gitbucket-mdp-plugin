@@ -1,0 +1,15 @@
+# sbt
+target/
+project/target/
+project/project/
+.bsp/
+
+# IDE
+.idea/
+.vscode/
+.metals/
+.bloop/
+**/metals.sbt
+
+# ビルド時に git-mdp から生成する
+src/main/resources/mdp/assets/md-diff.js
