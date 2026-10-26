@@ -61,7 +61,7 @@ CLI の `collectFileDiffs` が返す形式に合わせる。
 | フェーズ | 主な成果物 | 次へ進むためのゲート | 状態 |
 |---|---|---|---|
 | G0. 描画処理の共用準備（git-mdp） | ブラウザ用 JS とデータ形式の文書 | CLI の動作を変えずに、ブラウザで CLI と同じ HTML を生成できる | **完了**（[記録](git-mdp/docs/web.md)） |
-| G1. プラグインの土台 | 読み込めるプラグインの jar とビルド手順 | 利用する GitBucket に導入でき、ブラウザ用 JS を配信できる | 実装済み・ビルドと導入の確認待ち |
+| G1. プラグインの土台 | 読み込めるプラグインの jar とビルド手順 | 利用する GitBucket に導入でき、ブラウザ用 JS を配信できる | **完了**（作業環境の GitBucket 4.48.0 で確認） |
 | G2. 差分データの取得 | PR の差分を返すコントローラ | PR の Markdown の変更を漏れなく、正しい内容で取得できる | 未着手 |
 | G3. 表示画面と導線 | Markdown Diff タブと表示画面 | PR 画面から開いて、CLI と同じ操作でレビューできる | 未着手 |
 | G4. 実運用での受け入れ | 導入・更新手順と初版 | 実際の PR のレビュー補助として使える | 未着手 |
@@ -108,13 +108,18 @@ CLI の `collectFileDiffs` が返す形式に合わせる。
 - 配信したブラウザ用 JS を、GitBucket の URL から取得できる。
 - サブモジュールを含めてクローンし直しても、記載した手順でビルドできる。
 
-### 結果：実装済み（ビルドと導入の確認待ち）
+### 結果：完了
 
 - git-mdp をサブモジュール `git-mdp/` として追加した。現在は G0 の PR（git-mdp #10）のコミットを指しており、マージ後に main のコミットへ付け替える。
 - gitbucket-plugin-template を元に、sbt のプロジェクト（sbt 1.13.0、Scala 2.13.18、sbt-gitbucket-plugin 1.7.0、GitBucket 4.48.0）と Plugin 定義を作った。
 - `build.sh` で、ブラウザ用 JS の生成 → リソースへのコピー → `sbt assembly` を行う。生成した JS はリポジトリに含めない。
 - `assetsMappings` で、ブラウザ用 JS を `/plugin-assets/mdp/md-diff.js` として配信する。
-- 作業環境では、sbt の取得と実行が許可されず、ビルドを確認できていない。依存ライブラリ（GitBucket 4.48.0、sbt-gitbucket-plugin 1.7.0）が Maven Central にあることは確認した。ゲートの確認（ビルド、導入、JS の取得）は利用者の環境で行う。
+- 生成物は `target/scala-2.13/gitbucket-mdp-plugin-0.1.0.jar`（約 77KB。Plugin.class とブラウザ用 JS のみ）。
+- 作業環境（OpenJDK 21、sbt 1.13.0）で、新しくクローンしたリポジトリから `build.sh` で jar を作れることを確認した。
+- 作業環境で GitBucket 4.48.0（公式の war）を起動し、jar を `plugins/` に置いて次を確認した。
+  - 起動時にプラグインが読み込まれ、管理画面のプラグイン一覧に「Markdown Diff Plugin」が表示される。
+  - `/plugin-assets/mdp/md-diff.js` が配信され、内容が git-mdp で生成したものと一致する。
+- 利用者の GitBucket への導入は、G3 で画面ができてからまとめて確認する。
 
 ## フェーズ G2：差分データの取得
 
