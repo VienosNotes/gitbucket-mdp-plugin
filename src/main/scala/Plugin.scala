@@ -1,4 +1,6 @@
+import gitbucket.core.controller.ControllerBase
 import io.github.gitbucket.solidbase.model.Version
+import io.github.vienosnotes.mdp.MarkdownDiffController
 
 class Plugin extends gitbucket.core.plugin.Plugin {
   override val pluginId: String = "mdp"
@@ -8,5 +10,7 @@ class Plugin extends gitbucket.core.plugin.Plugin {
 
   // src/main/resources/mdp/assets/ を /plugin-assets/mdp/ で配信する。
   // ブラウザ用 JS（md-diff.js）はビルド時に git-mdp から生成してここに置く
+  override val controllers: Seq[(String, ControllerBase)] = Seq("/*" -> new MarkdownDiffController())
+
   override val assetsMappings: Seq[(String, String)] = Seq("/mdp" -> "/mdp/assets")
 }

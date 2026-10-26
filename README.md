@@ -42,3 +42,13 @@ git add git-mdp
 git commit -m "git-mdp を更新"
 ./build.sh
 ```
+
+## 動作確認
+
+作業用の GitBucket（初期状態、管理者 root/root）にプラグインを導入して起動したうえで、次を実行する。
+
+```sh
+(cd git-mdp && npm run build)       # test/verify.mjs が git-mdp の復元処理を使う
+test/setup.sh /tmp/mdp-work         # 検証用のリポジトリと PR を作る
+test/check.sh /tmp/mdp-work         # 差分データの取得結果と閲覧権限を確認する
+```
