@@ -1,0 +1,3 @@
+[submodule "git-mdp"]
+	path = git-mdp
+	url = https://github.com/VienosNotes/git-mdp
