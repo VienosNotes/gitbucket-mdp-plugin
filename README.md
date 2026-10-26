@@ -21,7 +21,7 @@ cd gitbucket-mdp-plugin
 
 1. サブモジュール（`git-mdp/`）を取得・更新する。
 2. git-mdp でブラウザ用 JS（`dist/web/md-diff.js`）を生成し、`src/main/resources/mdp/assets/` にコピーする。
-3. `sbt assembly` で jar を作る。生成物は `target/scala-2.13/gitbucket-mdp-plugin-assembly-<版>.jar`。
+3. `sbt assembly` で jar を作る。生成物は `target/scala-2.13/gitbucket-mdp-plugin-<版>.jar`。
 
 ## 導入
 

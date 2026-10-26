@@ -9,4 +9,4 @@ git submodule update --init
 mkdir -p src/main/resources/mdp/assets
 cp git-mdp/dist/web/md-diff.js src/main/resources/mdp/assets/md-diff.js
 sbt assembly
-ls target/scala-2.13/*-assembly-*.jar
+ls target/scala-2.13/gitbucket-mdp-plugin-*.jar
