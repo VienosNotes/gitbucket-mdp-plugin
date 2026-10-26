@@ -63,7 +63,7 @@ CLI の `collectFileDiffs` が返す形式に合わせる。
 | G0. 描画処理の共用準備（git-mdp） | ブラウザ用 JS とデータ形式の文書 | CLI の動作を変えずに、ブラウザで CLI と同じ HTML を生成できる | **完了**（[記録](git-mdp/docs/web.md)） |
 | G1. プラグインの土台 | 読み込めるプラグインの jar とビルド手順 | 利用する GitBucket に導入でき、ブラウザ用 JS を配信できる | **完了**（作業環境の GitBucket 4.48.0 で確認） |
 | G2. 差分データの取得 | PR の差分を返すコントローラ | PR の Markdown の変更を漏れなく、正しい内容で取得できる | **完了**（作業環境の GitBucket 4.48.0 で確認） |
-| G3. 表示画面と導線 | Markdown Diff タブと表示画面 | PR 画面から開いて、CLI と同じ操作でレビューできる | 未着手 |
+| G3. 表示画面と導線 | Markdown Diff タブと表示画面 | PR 画面から開いて、CLI と同じ操作でレビューできる | **完了**（作業環境の GitBucket 4.48.0 で確認） |
 | G4. 実運用での受け入れ | 導入・更新手順と初版 | 実際の PR のレビュー補助として使える | 未着手 |
 
 ## フェーズ G0：描画処理の共用準備（git-mdp）
@@ -168,6 +168,21 @@ CLI の `collectFileDiffs` が返す形式に合わせる。
 - 表示画面で、CLI と同じ操作（マーク、ポップアップ、表示モードの切り替え、前後の hunk への移動、目次、折りたたみ）ができる。
 - 描画結果が iframe の中で GitBucket のオリジンと切り離されている（iframe 内のスクリプトから親ページや GitBucket の Cookie を参照できない）。
 
+### 結果：完了
+
+- `/:owner/:repository/pull/:id/markdown-diff` を表示画面にした。PR へ戻るリンクと PR のタイトルの見出し、`sandbox` 付きの iframe で構成する。差分データは JSON としてページに埋め込み（`<` はエスケープ）、ブラウザ用 JS で HTML を生成して iframe の `srcdoc` に設定する。
+- Markdown の変更がない PR では「Markdown ファイルの変更はありません。」、バイナリを含む PR ではエラーのメッセージを表示する（後者は 422）。
+- `javaScripts` で PR 画面（Conversation、Commits、Files Changed）に JS を差し込み、タブ列の末尾に「Markdown Diff」を追加する。
+- 決定事項：本文中のリンクは新しいタブで開く。iframe の `sandbox` に `allow-popups allow-popups-to-escape-sandbox` を加え、生成した HTML に `<base target="_blank">` を入れる。ページ内リンク（目次など）は git-mdp の JS が自前でスクロールするため影響しない。新しいタブは sandbox の制限を受けない。
+- `test/check.sh` を、表示画面に埋め込んだ JSON を取り出して照合するよう変更した。`test/setup.sh` に、Markdown 以外だけを変更した PR（#6）と、外部リンクを含む本文を加えた。
+- 確認した内容（作業環境の GitBucket 4.48.0、Chromium）：
+  - Conversation、Commits、Files Changed の各画面で、タブ列に「Markdown Diff」が表示され、押すと表示画面に移動する。
+  - 表示画面で、マーク、ポップアップ、前後の hunk への移動、目次、折りたたみ、表示モードの切り替えが動く。目次のリンクで iframe や画面が移動しない。
+  - 本文中の外部リンクは新しいタブで開き、表示画面はそのまま残る。
+  - iframe 内のスクリプトから、親ページと Cookie を参照できない（SecurityError、オリジンは `null`）。
+  - 「Pull Request に戻る」で PR 画面に戻れる。
+  - `test/check.sh` の全項目（G2 の項目と、Markdown の変更がない PR の表示）が通る。
+
 ## フェーズ G4：実運用での受け入れ
 
 ### 実施すること
@@ -183,7 +198,6 @@ CLI の `collectFileDiffs` が返す形式に合わせる。
 
 ## 実装前または該当フェーズで相談する事項
 
-- iframe 内のリンクの扱い。`sandbox` の中では、通常のリンクは iframe 自体の移動になる。外部リンクを新しいタブで開けるようにするか（`allow-popups` の追加など）を G3 で決める。
 - 相対パスの画像の表示。GitBucket 上ではリポジトリのファイルの URL に置き換えられるため、CLI より実現しやすい。初版の後に必要性を確認する。
 
 ## 既知のリスク

@@ -14,7 +14,9 @@ signin root; signin alice
 cd "$W"
 for pr in "docs 1 feature" "docs 2 copy" "docs 3 from-fork" "secret 1 feature"; do
   set -- $pr
-  curl -sS -b "$W/.root" -o "$W/.pr.json" "$B/root/$1/pull/$2/markdown-diff"
+  # 表示画面に埋め込んだ JSON を取り出す
+  curl -sS -b "$W/.root" "$B/root/$1/pull/$2/markdown-diff" |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(/id="md-diff-input">(.*?)<\/script>/s.exec(s)[1]))' > "$W/.pr.json"
   echo "--- root/$1 PR #$2"
   node "$T/verify.mjs" "$W/.pr.json" "$W" "$(git merge-base main "$3")" "$3" || fail=1
 done
@@ -25,4 +27,5 @@ expect "公開：未ログイン" "$(code $B/root/docs/pull/1/markdown-diff)" 20
 expect "PR ではない issue" "$(code -b "$W/.root" $B/root/docs/pull/4/markdown-diff)" 404
 expect "存在しない番号" "$(code -b "$W/.root" $B/root/docs/pull/99/markdown-diff)" 404
 expect "バイナリを含む PR" "$(code -b "$W/.root" $B/root/docs/pull/5/markdown-diff)" 422
+expect "Markdown の変更がない PR" "$(curl -sS -b "$W/.root" $B/root/docs/pull/6/markdown-diff | grep -c 'Markdown ファイルの変更はありません')" 1
 exit $fail

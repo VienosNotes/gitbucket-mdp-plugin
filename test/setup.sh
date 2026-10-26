@@ -6,6 +6,7 @@
 #   PR #3 root/docs   alice の fork から
 #   PR #1 root/secret 非公開リポジトリ（alice は閲覧権限なし）
 #   PR #5 root/docs   バイナリとして扱われる Markdown（#4 は通常の issue）
+#   PR #6 root/docs   Markdown 以外だけの変更
 set -eu
 W=$1
 B=${2:-http://localhost:18080}
@@ -31,7 +32,7 @@ git mv c.md c2.md
 git mv d.md d2.md && sed -i 's/リネームして編集 3 行目。/変更した 3 行目。/' d2.md
 cp e.md e-copy.md && sed -i 's/コピー元 1 行目。/コピー元を変更。/' e.md
 echo text2 > readme.txt
-printf '# 新規\n\n追加した本文\n' > new.md
+printf '# 新規\n\n追加した本文と[外部リンク](https://example.com/)\n' > new.md
 : > empty.md
 printf '# 日本語\n\n本文を変更\n' > '仕様 書/x.md'
 printf '# 末尾改行なし\n\n最終行を変更' > no-eol.md
@@ -62,3 +63,7 @@ api root:root -X POST $B/api/v3/repos/root/docs/issues -d '{"title":"ただの i
 git checkout -q main && git checkout -qb bin && printf 'abc\0def\n' > bin.md && git add bin.md && git commit -qm bin
 git push -q http://root:root@$H/git/root/docs.git bin
 api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"バイナリ","head":"bin","base":"main"}'
+# PR #6：Markdown 以外だけの変更
+git checkout -q main && git checkout -qb text-only && echo text3 > readme.txt && git commit -qam text-only
+git push -q http://root:root@$H/git/root/docs.git text-only
+api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"テキストのみ","head":"text-only","base":"main"}'

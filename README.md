@@ -29,7 +29,14 @@ cd gitbucket-mdp-plugin
 2. GitBucket を再起動する。
 3. 管理者で「System administration」→「Plugins」を開き、「Markdown Diff Plugin」が表示されることを確認する。
 
-現時点では、ブラウザ用 JS を `<GitBucket の URL>/plugin-assets/mdp/md-diff.js` として配信するだけで、画面には何も追加しない。
+## 使い方
+
+Pull Request の画面のタブ列に「Markdown Diff」が追加される。押すと、PR で変更された Markdown ファイルを、レンダリングした全文で表示する画面に移動する。画面の見方は git-mdp の README と同じ。
+
+- 比較対象は Files Changed タブと同じ（PR の分岐点と比較先）。
+- 表示内容は sandbox 付きの iframe の中に表示し、GitBucket のログインセッションから切り離している。
+- 本文中のリンクは新しいタブで開く。
+- Markdown ファイルの変更がない PR では、その旨を表示する。バイナリとして扱われる Markdown ファイルを含む PR はエラーになる。
 
 ## git-mdp の更新を取り込む
 
