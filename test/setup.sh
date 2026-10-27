@@ -7,10 +7,12 @@
 #   PR #1 root/secret 非公開リポジトリ（alice は閲覧権限なし）
 #   PR #5 root/docs   バイナリとして扱われる Markdown（#4 は通常の issue）
 #   PR #6 root/docs   Markdown 以外だけの変更
-#   PR #7 root/docs   ソースの変更（複数 hunk、大きすぎるファイル、バイナリ、追加・削除・リネーム・コピー）と Markdown の変更
+#   PR #7 root/docs   ソースの変更（複数 hunk、大きすぎるファイル、バイナリ、追加・削除・リネーム・コピー、色付けする言語）と Markdown の変更
 #   PR #8 root/docs   サブモジュールの変更と追加
 set -eu
 W=$1
+# 色付けの確認には git-mdp のフィクスチャを使う
+F=$(cd "$(dirname "$0")/../git-mdp/fixtures-source" && pwd)
 B=${2:-http://localhost:18080}
 H=${B#http://}
 api() { curl -sS -u "$1" -H 'Content-Type: application/json' "${@:2}" >/dev/null; }
@@ -78,6 +80,7 @@ printf '\211PNG\0\0data' > logo.png
 printf 'export const old = 1;\nexport const keep = 2;\nexport const more = 3;\n' > old.ts
 printf 'export const removed = 1;\n' > removed.ts
 seq 1 20 | sed 's/.*/コピー元 &/' > c-src.ts
+cp $F/cs/before.cs OrderService.cs && cp $F/xaml/before.xaml MainWindow.xaml && cp $F/json/before.json settings.json
 git add -A && git commit -qm "ソースを追加"
 git push -q http://root:root@$H/git/root/docs.git main
 git checkout -qb source
@@ -89,6 +92,7 @@ git mv old.ts renamed.ts
 git rm -q removed.ts
 printf 'export const added = 1;\n' > new.ts
 git mv c-src.ts c1.ts && cp c1.ts c2.ts
+cp $F/cs/after.cs OrderService.cs && cp $F/xaml/after.xaml MainWindow.xaml && cp $F/json/after.json settings.json
 sed -i 's/本文 3 行目。/ソースの PR での変更。/' a.md
 git add -A && git commit -qm source
 git push -q http://root:root@$H/git/root/docs.git source

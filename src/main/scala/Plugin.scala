@@ -5,8 +5,8 @@ import io.github.vienosnotes.mdp.MarkdownDiffController
 class Plugin extends gitbucket.core.plugin.Plugin {
   override val pluginId: String = "mdp"
   override val pluginName: String = "Markdown Diff Plugin"
-  override val description: String = "Pull Request の Markdown の差分を、レンダリングした全文で表示する"
-  override val versions: List[Version] = List(new Version("0.1.0"))
+  override val description: String = "Pull Request の Markdown とソースの差分を、ファイル全体の中で表示する"
+  override val versions: List[Version] = List(new Version("0.1.0"), new Version("0.2.0"))
 
   override val controllers: Seq[(String, ControllerBase)] = Seq("/*" -> new MarkdownDiffController())
 
