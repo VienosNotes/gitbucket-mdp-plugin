@@ -14,7 +14,7 @@ class Plugin extends gitbucket.core.plugin.Plugin {
   // ブラウザ用 JS（md-diff.js）はビルド時に git-mdp から生成してここに置く
   override val assetsMappings: Seq[(String, String)] = Seq("/mdp" -> "/mdp/assets")
 
-  // PR 画面（Conversation、Commits、Files Changed）のタブ列に「Markdown Diff」を追加する。
+  // PR 画面（Conversation、Commits、Files Changed）のタブ列に「Markdown Diff」「Source Diff」を追加する。
   // GitBucket にタブを追加する拡張点がないため、表示後に DOM を書き換える
   override val javaScripts: Seq[(String, String)] = Seq(
     ".*/pull/[0-9]+(/commits|/files)?" ->
@@ -22,12 +22,14 @@ class Plugin extends gitbucket.core.plugin.Plugin {
         |  var tabs = document.getElementById('pullreq-tab');
         |  var base = location.pathname.match(/^(.*\/pull\/[0-9]+)/);
         |  if (!tabs || !base) return;
-        |  var link = document.createElement('a');
-        |  link.href = base[1] + '/markdown-diff';
-        |  link.textContent = 'Markdown Diff';
-        |  var item = document.createElement('li');
-        |  item.appendChild(link);
-        |  tabs.appendChild(item);
+        |  [['markdown-diff', 'Markdown Diff'], ['source-diff', 'Source Diff']].forEach(function (tab) {
+        |    var link = document.createElement('a');
+        |    link.href = base[1] + '/' + tab[0];
+        |    link.textContent = tab[1];
+        |    var item = document.createElement('li');
+        |    item.appendChild(link);
+        |    tabs.appendChild(item);
+        |  });
         |});""".stripMargin
   )
 }

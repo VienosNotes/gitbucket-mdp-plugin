@@ -4,6 +4,7 @@ import gitbucket.core.controller.ControllerBase
 import gitbucket.core.model.Profile.*
 import gitbucket.core.model.Profile.profile.blockingApi.*
 import gitbucket.core.service.{AccountService, RepositoryService}
+import gitbucket.core.service.RepositoryService.RepositoryInfo
 import gitbucket.core.util.Directory.getRepositoryDir
 import gitbucket.core.util.Implicits.*
 import gitbucket.core.util.ReferrerAuthenticator
@@ -16,7 +17,12 @@ import scala.util.Using
 class MarkdownDiffController extends ControllerBase with RepositoryService with AccountService with ReferrerAuthenticator {
 
   // 閲覧権限は GitBucket 本体の PR 画面と同じ（referrersOnly）
-  get("/:owner/:repository/pull/:id/markdown-diff")(referrersOnly { repository =>
+  get("/:owner/:repository/pull/:id/markdown-diff")(referrersOnly(show(_, source = false)))
+
+  // Markdown 以外のファイル（Markdown Diff の対象外のすべて）
+  get("/:owner/:repository/pull/:id/source-diff")(referrersOnly(show(_, source = true)))
+
+  private def show(repository: RepositoryInfo, source: Boolean): Any =
     params("id").toIntOpt.flatMap { issueId =>
       for {
         issue <- Issues.filter(_.byPrimaryKey(repository.owner, repository.name, issueId)).firstOption
@@ -24,27 +30,28 @@ class MarkdownDiffController extends ControllerBase with RepositoryService with 
       } yield {
         contentType = "text/html; charset=UTF-8"
         val title = s"${issue.title} #${issue.issueId}"
+        val label = if (source) "Source Diff" else "Markdown Diff"
         val prUrl = s"${context.path}/${repository.owner}/${repository.name}/pull/${issue.issueId}"
         try {
           // PR の比較元（分岐点）と比較先は、どちらも base 側のリポジトリにある
           val files = Using.resource(Git.open(getRepositoryDir(repository.owner, repository.name))) { git =>
-            MarkdownDiff.collect(git, pullreq.commitIdFrom, pullreq.commitIdTo)
+            MarkdownDiff.collect(git, pullreq.commitIdFrom, pullreq.commitIdTo, source)
           }
-          if (files.isEmpty) page(title, prUrl, message("Markdown ファイルの変更はありません。"))
-          else page(title, prUrl, viewer(MarkdownDiff.toJson(title, files)))
+          val kind = if (source) "source" else "markdown"
+          if (files.isEmpty) page(label, title, prUrl, message(s"${if (source) "Markdown 以外の" else "Markdown "}ファイルの変更はありません。"))
+          else page(label, title, prUrl, viewer(label, MarkdownDiff.toJson(title, kind, files)))
         } catch {
-          case e: MarkdownDiffException => UnprocessableEntity(page(title, prUrl, message(e.getMessage)))
+          case e: MarkdownDiffException => UnprocessableEntity(page(label, title, prUrl, message(e.getMessage)))
         }
       }
     } getOrElse NotFound()
-  })
 
   private def message(text: String): String = s"""<p class="message">${escapeHtml(text)}</p>"""
 
   // 描画結果は sandbox 付きの iframe に表示し、GitBucket のオリジンから切り離す。
   // 外部リンクは新しいタブで開けるよう、ポップアップだけを許可する
-  private def viewer(json: String): String =
-    s"""<iframe id="md-diff" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" title="Markdown Diff"></iframe>
+  private def viewer(label: String, json: String): String =
+    s"""<iframe id="md-diff" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" title="$label"></iframe>
 <script type="application/json" id="md-diff-input">${json.replace("<", "\\u003c")}</script>
 <script src="${context.path}/plugin-assets/mdp/md-diff.js"></script>
 <script>
@@ -54,13 +61,13 @@ class MarkdownDiffController extends ControllerBase with RepositoryService with 
   document.getElementById('md-diff').srcdoc = html;
 </script>"""
 
-  private def page(title: String, prUrl: String, body: String): String =
+  private def page(label: String, title: String, prUrl: String, body: String): String =
     s"""<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)} - Markdown Diff</title>
+<title>${escapeHtml(title)} - $label</title>
 <style>
 html, body { margin: 0; height: 100%; }
 body { display: flex; flex-direction: column; font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif; }

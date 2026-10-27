@@ -7,6 +7,8 @@
 #   PR #1 root/secret 非公開リポジトリ（alice は閲覧権限なし）
 #   PR #5 root/docs   バイナリとして扱われる Markdown（#4 は通常の issue）
 #   PR #6 root/docs   Markdown 以外だけの変更
+#   PR #7 root/docs   ソースの変更（複数 hunk、大きすぎるファイル、バイナリ、追加・削除・リネーム・コピー）と Markdown の変更
+#   PR #8 root/docs   サブモジュールの変更と追加
 set -eu
 W=$1
 B=${2:-http://localhost:18080}
@@ -67,3 +69,38 @@ api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"バイナリ
 git checkout -q main && git checkout -qb text-only && echo text3 > readme.txt && git commit -qam text-only
 git push -q http://root:root@$H/git/root/docs.git text-only
 api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"テキストのみ","head":"text-only","base":"main"}'
+# PR #7：ソースの変更。比較元のファイルは main に追加してから分岐する
+git checkout -q main
+seq 1 40 | sed 's/.*/const v& = &;/' > app.ts
+seq 1 6000 | sed 's/.*/line &/' > big.ts
+head -c 614400 /dev/zero | tr '\0' x > wide.txt && echo >> wide.txt
+printf '\211PNG\0\0data' > logo.png
+printf 'export const old = 1;\nexport const keep = 2;\nexport const more = 3;\n' > old.ts
+printf 'export const removed = 1;\n' > removed.ts
+seq 1 20 | sed 's/.*/コピー元 &/' > c-src.ts
+git add -A && git commit -qm "ソースを追加"
+git push -q http://root:root@$H/git/root/docs.git main
+git checkout -qb source
+sed -i 's/const v2 = 2;/const v2 = 20;/; s/const v35 = 35;/const v35 = 350;/' app.ts
+sed -i 's/^line 3000$/line 3000 changed/' big.ts
+echo y >> wide.txt
+printf '\211PNG\0\0data2' > logo.png
+git mv old.ts renamed.ts
+git rm -q removed.ts
+printf 'export const added = 1;\n' > new.ts
+git mv c-src.ts c1.ts && cp c1.ts c2.ts
+sed -i 's/本文 3 行目。/ソースの PR での変更。/' a.md
+git add -A && git commit -qm source
+git push -q http://root:root@$H/git/root/docs.git source
+api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"ソース","head":"source","base":"main"}'
+# PR #8：サブモジュール（参照先のコミットはこのリポジトリにない）の変更と追加
+git checkout -q main
+git update-index --add --cacheinfo 160000,3e4d9e1316c20f9ce21846b80ef11b5e7fb288b9,lib
+git commit -qm "サブモジュールを追加"
+git push -q http://root:root@$H/git/root/docs.git main
+git checkout -qb submodule
+git update-index --cacheinfo 160000,8cf7539e786d7302d59c4cdf23a70fa891e6e12d,lib
+git update-index --add --cacheinfo 160000,1f9d4e6bad9e7555a84bb866b3b67f563473099c,lib2
+git commit -qm submodule
+git push -q http://root:root@$H/git/root/docs.git submodule
+api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"サブモジュール","head":"submodule","base":"main"}'
