@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.diff.DiffEntry.ChangeType
 import org.eclipse.jgit.diff.{DiffEntry, DiffFormatter}
-import org.eclipse.jgit.lib.{AbbreviatedObjectId, Repository}
+import org.eclipse.jgit.lib.{AbbreviatedObjectId, FileMode, Repository}
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.util.io.DisabledOutputStream
 import org.json4s.*
@@ -84,6 +84,12 @@ object MarkdownDiff {
       case ChangeType.DELETE => ("D", Some(entry.getOldPath), None)
       case ChangeType.RENAME => ("R", Some(entry.getOldPath), Some(entry.getNewPath))
       case _                 => ("M", Some(entry.getOldPath), Some(entry.getNewPath))
+    }
+    if (entry.getOldMode == FileMode.GITLINK || entry.getNewMode == FileMode.GITLINK) {
+      // サブモジュールの本文（コミット）はこのリポジトリにないため、git diff と同じく
+      // "Subproject commit <ID>" の一行を変更前の本文とする
+      val oldText = if (entry.getOldMode == FileMode.GITLINK) s"Subproject commit ${entry.getOldId.toObjectId.name}\n" else ""
+      return FileChange(status, oldPath, newPath, Some(oldText), patch)
     }
     if (patch.linesIterator.contains("Binary files differ")) {
       // ソースではバイナリも珍しくないため、エラーにせず状態だけを表示する

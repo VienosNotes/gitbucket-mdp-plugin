@@ -14,7 +14,7 @@ signin root; signin alice
 cd "$W"
 # 引数：リポジトリ PR 番号 比較先のブランチ 表示（markdown-diff / source-diff）
 for pr in "docs 1 feature markdown-diff" "docs 2 copy markdown-diff" "docs 3 from-fork markdown-diff" "secret 1 feature markdown-diff" \
-  "docs 1 feature source-diff" "docs 7 source source-diff" "docs 7 source markdown-diff"; do
+  "docs 1 feature source-diff" "docs 7 source source-diff" "docs 7 source markdown-diff" "docs 8 submodule source-diff"; do
   set -- $pr
   # 表示画面に埋め込んだ JSON を取り出す
   curl -sS -b "$W/.root" "$B/root/$1/pull/$2/$4" |

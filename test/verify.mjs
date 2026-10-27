@@ -9,7 +9,12 @@ const [json, repo, from, to, kind] = process.argv.slice(2);
 const source = kind === 'source';
 const data = JSON.parse(readFileSync(json, 'utf8'));
 const git = (...args) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-const show = (rev, path) => (path === null ? '' : git('show', `${rev}:${path}`));
+// サブモジュールは git diff と同じく "Subproject commit <ID>" の一行として扱う
+const show = (rev, path) => {
+  if (path === null) return '';
+  const [mode, , id] = git('ls-tree', rev, '--', path).split(/\s+/);
+  return mode === '160000' ? `Subproject commit ${id}\n` : git('show', `${rev}:${path}`);
+};
 // git-mdp の CLI と同じ基準（5,000 行または 512KB を超える）
 const large = (text) => splitLines(text).length > 5000 || Buffer.byteLength(text, 'utf8') > 512 * 1024;
 let ok = true;

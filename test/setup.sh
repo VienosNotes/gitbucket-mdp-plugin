@@ -8,6 +8,7 @@
 #   PR #5 root/docs   バイナリとして扱われる Markdown（#4 は通常の issue）
 #   PR #6 root/docs   Markdown 以外だけの変更
 #   PR #7 root/docs   ソースの変更（複数 hunk、大きすぎるファイル、バイナリ、追加・削除・リネーム・コピー）と Markdown の変更
+#   PR #8 root/docs   サブモジュールの変更と追加
 set -eu
 W=$1
 B=${2:-http://localhost:18080}
@@ -92,3 +93,14 @@ sed -i 's/本文 3 行目。/ソースの PR での変更。/' a.md
 git add -A && git commit -qm source
 git push -q http://root:root@$H/git/root/docs.git source
 api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"ソース","head":"source","base":"main"}'
+# PR #8：サブモジュール（参照先のコミットはこのリポジトリにない）の変更と追加
+git checkout -q main
+git update-index --add --cacheinfo 160000,3e4d9e1316c20f9ce21846b80ef11b5e7fb288b9,lib
+git commit -qm "サブモジュールを追加"
+git push -q http://root:root@$H/git/root/docs.git main
+git checkout -qb submodule
+git update-index --cacheinfo 160000,8cf7539e786d7302d59c4cdf23a70fa891e6e12d,lib
+git update-index --add --cacheinfo 160000,1f9d4e6bad9e7555a84bb866b3b67f563473099c,lib2
+git commit -qm submodule
+git push -q http://root:root@$H/git/root/docs.git submodule
+api root:root -X POST $B/api/v3/repos/root/docs/pulls -d '{"title":"サブモジュール","head":"submodule","base":"main"}'
